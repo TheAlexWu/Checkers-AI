@@ -1,10 +1,10 @@
 package cs540.checkers.bob;
 
-import static cs540.checkers.CheckersConsts.*;
-
 import java.util.*;
 
+import static cs540.checkers.CheckersConsts.*;
 import cs540.checkers.Evaluator;
+
 
 /**
  * This Enhanced Static Board Evaluator:
@@ -30,25 +30,25 @@ public class BobEvaluator implements Evaluator {
         	int v = bs[i];
             switch(v) {
             
-                case RED_PAWN:
+                case RED_PAWN: //fall into next category
                 case BLK_PAWN:
-                    pawns[v % 4] += 1;
-                    break;
-                case RED_KING:
+                	pawns[v % 4] += 1;
+                break;
+                case RED_KING: //fall into next category
                 case BLK_KING:
                     kings[v % 4] += 1;
-                    break;
+                break;
             }
-            
-            
-            
+         
         }
         
         materialScore += 400 * (pawns[RED] - pawns[BLK]) + 1750 * (kings[RED] - kings[BLK]);
         
         //if nearing end game and/or one side is losing badly, go to corners
         boolean doForRestOfGame = false;
-        if(materialScore >= 3000) { doForRestOfGame = true; }
+        if(materialScore >= 3000) { 
+        	doForRestOfGame = true; 
+        }
         	
         if(doForRestOfGame) { //incorporate this scoring for rest of game
         	
