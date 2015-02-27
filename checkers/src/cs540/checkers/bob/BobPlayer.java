@@ -1,29 +1,20 @@
 package cs540.checkers.bob;
 
-import cs540.checkers.*;
-import static cs540.checkers.CheckersConsts.*;
-
 import java.util.List;
 import java.util.Stack;
 
-/*
- * This is a skeleton for an alpha beta checkers player. Please copy this file
- * into your own directory, i.e. src/<username>/, and change the package 
- * declaration at the top to read
- *     package cs540.checkers.<username>;
- * , where <username> is your cs department login.
- */
-/** This is a skeleton for an alpha beta checkers player. */
+import cs540.checkers.*;
+import static cs540.checkers.CheckersConsts.*;
+
 public class BobPlayer extends CheckersPlayer implements GradedCheckersPlayer 
 {
     
     protected int pruneCount = 0;	//The number of pruned subtrees for the most recent deepening iteration.
     protected int lastPrunedNodeScore = -1;	    // The score of the most recently pruned node.
     
-    int currDepthLimit;	//current depth limit
+    int currDepthLimit;		//current depth limit
     int maxDepthLimit = getDepthLimit(0);
-    
-    int currScore;	//current score
+    int currScore;		//current score
     int bestScore;
     
     Move bestMove;
@@ -33,11 +24,9 @@ public class BobPlayer extends CheckersPlayer implements GradedCheckersPlayer
     
     //constructor
     public BobPlayer(String name, int side) { 
-        
     	super(name, side);
         // Use SimpleEvaluator to score terminal nodes
         sbe = new BobEvaluator();
-        
     }
     
     /** Alpha-Beta pruning with Iterative Deepening */
@@ -45,9 +34,9 @@ public class BobPlayer extends CheckersPlayer implements GradedCheckersPlayer
     /* Also, remember to count the number of pruned subtrees. */
     public void calculateMove(int[] bs) {
     	 
-    	//initialize score and current depth limit
-    	currScore = -1;
-    	currDepthLimit = 0;
+		//initialize score and current depth limit
+		currScore = -1;
+		currDepthLimit = 0;
     	 
 		/* Get all the possible moves for this player on the provided board state */
 		List<Move> possibleMoves = Utils.getAllPossibleMoves(bs, side);
@@ -55,12 +44,16 @@ public class BobPlayer extends CheckersPlayer implements GradedCheckersPlayer
 		bestScore = Integer.MIN_VALUE; //initialize bestMove
     	 
     	setMove(bestMove); //set default move in case handler is interrupted before setting best move
-    	if(possibleMoves.size() == 1) { return; } //SMALL OPTIMIZATION: if only one move, just return it instead of going through search
-    	
+    	if(possibleMoves.size() == 1) { 
+    		//SMALL OPTIMIZATION: if only one move, just return it instead of going through search
+    		return;
+    	}
+    		
 	    do {
-	        
 	        //increment depth count (initially 0)
-	        if(currDepthLimit < maxDepthLimit) { currDepthLimit++; }
+	        if(currDepthLimit < maxDepthLimit) { 
+	        	currDepthLimit++;
+	        }
 	        
 	        //search
 	        currScore = searchGameTree(bs, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, true);
@@ -81,11 +74,9 @@ public class BobPlayer extends CheckersPlayer implements GradedCheckersPlayer
 				System.out.println(">> Subtrees Pruned: " + getPruneCount());
 				System.out.println(">> Minimax Value of Last Pruned Node: " + getLastPrunedNodeScore());
 			}
-	
 		} while (currDepthLimit != maxDepthLimit); //while depth limit has not been reached
 	    	 
 	    return; //otherwise, return
-	    
     }
 	
 	public int searchGameTree(int[] currentState, int depth, int alpha, int beta, boolean maxPlayer) {
@@ -94,19 +85,17 @@ public class BobPlayer extends CheckersPlayer implements GradedCheckersPlayer
         List<Move> possibleMoves = Utils.getAllPossibleMoves(currentState, side);
         
         if (possibleMoves.isEmpty() || depth >= currDepthLimit) {
-        	
         	/* Negate the score if not RED */
-            if (side == BLK)
+            if (side == BLK) {
             	return -sbe.evaluate(currentState);
-            else
+            } else {
             	return sbe.evaluate(currentState);
-            
+            }
 		}
 		
     	if (maxPlayer) {
     		
 			for (int i = 0; i < possibleMoves.size(); i++) {
-				
 				Move move = possibleMoves.get(i); //set move
 		        Stack<Integer> rv = Utils.execute(currentState, move); //set stack
 		        
@@ -114,36 +103,35 @@ public class BobPlayer extends CheckersPlayer implements GradedCheckersPlayer
 				alpha = Math.max(alpha, searchGameTree(currentState, depth + 1, alpha, beta, false));
 
 				if ( ((alpha > bestScore) || setMove) && depth == 0) {
-					
-					if(alpha > bestScore) { bestScore = alpha; } //only update best score if alpha was better
-								
-						setMove = false; //allow ability to use setMove function to false
-						setMove(possibleMoves.get(i));	//set best move;
-								
+					if(alpha > bestScore) { 
+						bestScore = alpha; 
+						//only update best score if alpha was better
+					} 
+					setMove = false; //allow ability to use setMove function to false
+					setMove(possibleMoves.get(i));	//set best move;
 				}
 				
 				 /* Negate the score if not RED */
-				if (side == BLK)
+				if (side == BLK) {
 					alpha = -alpha;
+				}
 				
 				//if able to prune
 				if (beta <= alpha) {
-					
 					//set last pruned node score
-					if (side == BLK)
+					if (side == BLK) {
 						lastPrunedNodeScore = -sbe.evaluate(currentState);
-					else
+					} else {
 						lastPrunedNodeScore = sbe.evaluate(currentState);
-					
+					}
 		        	pruneCount++;	//update pruneCount
 		        	Utils.revert(currentState, rv); //revert board state
 		            break; //beta cut off
-		            
-		        } else { Utils.revert(currentState, rv); }
-			
+		        } else { 
+		        	Utils.revert(currentState, rv);
+		        }
 			}
 			return alpha;
-		    
 		} else { //minPlayer
 			
 			for (Move move : possibleMoves) {
@@ -154,33 +142,30 @@ public class BobPlayer extends CheckersPlayer implements GradedCheckersPlayer
 		        beta = Math.min(beta, searchGameTree(currentState, depth + 1, alpha, beta, true));
 		        
 		        if( (beta > bestScore) && depth == 1 ) { //beta/move has gotten better
-		        	
 		        	bestScore = beta;	//update best score
 					setMove = true;		//set ability to use setMove function to true
 				}
 		        
 		        /* Negate the score if not RED */
-		        if (side == BLK)
+		        if (side == BLK) {
 		        	beta = -beta;
-		        
+		        }
 		        //if able to prune
 		        if (beta <= alpha) {
-		        	
 		        	//set last pruned node score
-					if (side == BLK)
+					if (side == BLK) {
 						lastPrunedNodeScore = -sbe.evaluate(currentState);
-					else
+					} else {
 						lastPrunedNodeScore = sbe.evaluate(currentState);
-					
+					}
 		        	pruneCount++;
 		        	Utils.revert(currentState, rv);
 		            break; //alpha cut off
-		            
-		        } else { Utils.revert(currentState, rv); }
-		        
+		        } else { 
+		        	Utils.revert(currentState, rv); 
+		        }
 			}
 		    return beta;
-		    
 		}
     	
 	}
