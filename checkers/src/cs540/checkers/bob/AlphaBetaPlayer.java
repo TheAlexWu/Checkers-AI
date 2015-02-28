@@ -1,7 +1,7 @@
 package cs540.checkers.bob;
 
 import cs540.checkers.*;
-import static cs540.checkers.CheckersConsts.*;
+import cs540.checkers.CheckersConsts.*;
 
 import java.util.List;
 import java.util.Stack;
