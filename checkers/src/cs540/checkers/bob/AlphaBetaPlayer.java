@@ -27,8 +27,8 @@ public class AlphaBetaPlayer extends CheckersPlayer implements GradedCheckersPla
 	//constructor
 	public AlphaBetaPlayer(String name, int side) { 
 	    	super(name, side);
-		// Use SimpleEvaluator to score terminal nodes
-		sbe = new SimpleEvaluator();
+		// Use EnhancedEvaluator to score terminal nodes
+		sbe = new EnhancedEvaluator();
 	}
 	
 	/* Uses Alpha-Beta pruning with Iterative Deepening to determine the best next move.
