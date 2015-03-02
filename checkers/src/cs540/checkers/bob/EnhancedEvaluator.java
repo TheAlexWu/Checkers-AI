@@ -19,6 +19,8 @@ import java.util.*;
  */
 public class EnhancedEvaluator implements Evaluator {
 	
+	private int[] currentBS = null;	//the current board state to be evaluated
+	
 	/* SCORE WEIGHTING */
 	protected final int PAWN_MATERIAL_SCORE = 400;
 	protected final int KING_MATERIAL_SCORE = 1750;
@@ -34,9 +36,13 @@ public class EnhancedEvaluator implements Evaluator {
 	 * @return 	evaluated board score
 	 */
 	public int evaluate(int[] bs) {
-		
-		int totalScore = 0;	//overall score of the current board
-		
+		currentBS = bs;
+		return    evaluateMaterials() 
+			+ evaluateGuarding() 
+			+ evaluateSidePositioning();
+	}
+	
+	private int evaluateMaterials() {
 		/* Evaluate materials BEGIN */
 		int materialScore = 0;
 		int[] pawns = new int[2],
@@ -61,75 +67,90 @@ public class EnhancedEvaluator implements Evaluator {
 	         * The weights were optimized through trial and error due to time constraints, 
 	         * but could eventually be updated based upon machine-learned results.
 	         */
-	        materialScore +=  PAWN_MATERIAL_SCORE * (pawns[RED] - pawns[BLK]) 
-	        		+ KING_MATERIAL_SCORE * (kings[RED] - kings[BLK]);
+	        materialScore +=  (PAWN_MATERIAL_SCORE * (pawns[RED] - pawns[BLK]))
+	        		+ (KING_MATERIAL_SCORE * (kings[RED] - kings[BLK]));
 	        
 	        //if nearing end game and/or one side is losing badly, go to corners
 	        if(materialScore >= REMAINING_GAME_THRESHOLD) { 
+	        	
 	        	/* BONUS Corner Scoring */
-	            	if (bs[1] == BLK_KING || bs[8] == BLK_KING) 	totalScore -= CORNER_BONUS;
-	            	if (bs[62] == BLK_KING || bs[55] == BLK_KING) 	totalScore -= CORNER_BONUS;
-	            
-	            	if (bs[1] == RED_KING || bs[8] == RED_KING) 	totalScore += CORNER_BONUS;
-	            	if (bs[62] == RED_KING || bs[55] == RED_KING) 	totalScore += CORNER_BONUS;
+	            	if (bs[1] == BLK_KING || bs[8] == BLK_KING) {
+	            		materialScore -= CORNER_BONUS;
+	            	}
+	            	if (bs[62] == BLK_KING || bs[55] == BLK_KING) { 
+	            		materialScore -= CORNER_BONUS;
+	            	}
+	            	if (bs[1] == RED_KING || bs[8] == RED_KING) {
+	            		materialScore += CORNER_BONUS;
+	            	}
+	            	if (bs[62] == RED_KING || bs[55] == RED_KING) {
+	            		materialScore += CORNER_BONUS;
+	            	}
+	            	
 	        }
 	        
-	        totalScore += materialScore;
+	        return materialScore;
 	        /* Evaluate materials END */ 
-	        
+	}
+	
+	private int evaluateGuard(int[] bs) {
 	        /* Evaluate back-row guarding BEGIN */
 	        int guardScore = 0;
 	        
-	        if (bs[1] == BLK_PAWN) guardScore -= GUARD_BONUS;
-	        if (bs[3] == BLK_PAWN) guardScore -= GUARD_BONUS;
-	        if (bs[5] == BLK_PAWN) guardScore -= GUARD_BONUS;
-	        if (bs[7] == BLK_PAWN) guardScore -= GUARD_BONUS;
-	
-	        if (bs[56] == RED_PAWN) guardScore += GUARD_BONUS;
-	        if (bs[58] == RED_PAWN) guardScore += GUARD_BONUS;
-	        if (bs[60] == RED_PAWN) guardScore += GUARD_BONUS;
-	        if (bs[62] == RED_PAWN) guardScore += GUARD_BONUS;
+	        for(int i = 0; i < 4; i++) {
+	        	int index = (2*i)+1;
+	        	if (bs[index] == BLK_PAWN) {
+	        		guardScore -= GUARD_BONUS;
+	        	}
+	        	if (bs[63-index] == RED_PAWN) {
+	        		guardScore += GUARD_BONUS;
+	        	}
+	        }
 	        
-	        totalScore += guardScore;
+	        return guardScore;
 	        /* Evaluate back-row guarding END */
-	        
+	}
+	 
+	private int evaluateSidePositioning(int[] bs) {       
 	        /* Evaulate side position holding BEGIN */
 	        int sideScore = 0;
 	        
-	        if (bs[8] == BLK_PAWN || bs[8] == BLK_KING)  	sideScore -= TIER_TWO_SIDE_BONUS;
-	        if (bs[24] == BLK_PAWN || bs[24] == BLK_KING) 	sideScore -= TIER_TWO_SIDE_BONUS;
-	        if (bs[40] == BLK_PAWN || bs[40] == BLK_KING) 	sideScore -= TIER_TWO_SIDE_BONUS;
-	        if (bs[23] == BLK_PAWN || bs[23] == BLK_KING) 	sideScore -= TIER_TWO_SIDE_BONUS;
-	        if (bs[39] == BLK_PAWN || bs[39] == BLK_KING) 	sideScore -= TIER_TWO_SIDE_BONUS;
-	        if (bs[55] == BLK_PAWN || bs[55] == BLK_KING) 	sideScore -= TIER_TWO_SIDE_BONUS;
+	        //handle tier two bonus side squares
+	        for(int i = 0; i < 3; i++) {
+	        	int index = 8+(i*16);
+	        	if (bs[index] == BLK_PAWN || bs[index] == BLK_KING) {
+	        		sideScore -= TIER_TWO_SIDE_BONUS;
+	        	}
+	        	if (bs[15+index] == BLK_PAWN || bs[15+index] == BLK_PAWN) {
+	        		sideScore -= TIER_TWO_SIDE_BONUS;
+	        	}
+	        	if (bs[index] == RED_PAWN || bs[index] == RED_KING) {
+	        		sideScore += TIER_TWO_SIDE_BONUS;
+	        	}
+	        	if (bs[15+index] == RED_PAWN || bs[15+index] == RED_PAWN) {
+	        		sideScore += TIER_TWO_SIDE_BONUS;
+	        	}
+	        }
 	        
-	        if (bs[17] == BLK_PAWN || bs[17] == BLK_KING) 	sideScore -= TIER_ONE_SIDE_BONUS;
-	        if (bs[33] == BLK_PAWN || bs[33] == BLK_KING) 	sideScore -= TIER_ONE_SIDE_BONUS;
-	        if (bs[49] == BLK_PAWN || bs[49] == BLK_KING) 	sideScore -= TIER_ONE_SIDE_BONUS;
-	        if (bs[14] == BLK_PAWN || bs[14] == BLK_KING) 	sideScore -= TIER_ONE_SIDE_BONUS;
-	        if (bs[30] == BLK_PAWN || bs[30] == BLK_KING) 	sideScore -= TIER_ONE_SIDE_BONUS;
-	        if (bs[46] == BLK_PAWN || bs[46] == BLK_KING) 	sideScore -= TIER_ONE_SIDE_BONUS;
+	        //handle tier one bonus side squares
+	        for(int i = 0; i < 3; i++) {
+	        	int index = 14+(i*16);
+	        	if (bs[3+index] == BLK_PAWN || bs[3+index] == BLK_KING) {
+	        		sideScore -= TIER_TWO_SIDE_BONUS;
+	        	}
+	        	if (bs[index] == BLK_PAWN || bs[index] == BLK_PAWN) {
+	        		sideScore -= TIER_TWO_SIDE_BONUS;
+	        	}
+	        	if (bs[3+index] == RED_PAWN || bs[3+index] == RED_KING) {
+	        		sideScore += TIER_TWO_SIDE_BONUS;
+	        	}
+	        	if (bs[index] == RED_PAWN || bs[index] == RED_PAWN) {
+	        		sideScore += TIER_TWO_SIDE_BONUS;
+	        	}
+	        }
 	        
-	        if (bs[8] == RED_PAWN || bs[8] == RED_KING)   	sideScore += TIER_TWO_SIDE_BONUS;
-	        if (bs[24] == RED_PAWN || bs[24] == RED_KING) 	sideScore += TIER_TWO_SIDE_BONUS;
-	        if (bs[40] == RED_PAWN || bs[40] == RED_KING) 	sideScore += TIER_TWO_SIDE_BONUS;
-	        if (bs[23] == RED_PAWN || bs[23] == RED_KING) 	sideScore += TIER_TWO_SIDE_BONUS;
-	        if (bs[39] == RED_PAWN || bs[39] == RED_KING) 	sideScore += TIER_TWO_SIDE_BONUS;
-	        if (bs[55] == RED_PAWN || bs[55] == RED_KING) 	sideScore += TIER_TWO_SIDE_BONUS;
-	       
-	        if (bs[17] == RED_PAWN || bs[17] == RED_KING) 	sideScore += TIER_ONE_SIDE_BONUS;
-	        if (bs[33] == RED_PAWN || bs[33] == RED_KING) 	sideScore += TIER_ONE_SIDE_BONUS;
-	        if (bs[49] == RED_PAWN || bs[49] == RED_KING) 	sideScore += TIER_ONE_SIDE_BONUS;
-	        if (bs[14] == RED_PAWN || bs[14] == RED_KING) 	sideScore += TIER_ONE_SIDE_BONUS;
-	        if (bs[30] == RED_PAWN || bs[30] == RED_KING) 	sideScore += TIER_ONE_SIDE_BONUS;
-	        if (bs[46] == RED_PAWN || bs[46] == RED_KING) 	sideScore += TIER_ONE_SIDE_BONUS;
-	        
-	        totalScore += sideScore;
+	        return sideScore;
 	        /* Evaulate side position holding END */
-	        
-	        return totalScore;
 	}
 		
 }
-
-
