@@ -24,7 +24,7 @@ public class AlphaBetaPlayer extends CheckersPlayer implements GradedCheckersPla
 	private Move bestMove;			//Current best move			
 	private boolean setMove = false;	//Whether a move should be set
 	
-	//constructor
+	//constructor that assigns a name, side, and SBE to a player
 	public AlphaBetaPlayer(String name, int side) { 
 	    	super(name, side);
 		// Use EnhancedEvaluator to score terminal nodes
@@ -100,8 +100,8 @@ public class AlphaBetaPlayer extends CheckersPlayer implements GradedCheckersPla
 	        List<Move> possibleMoves = Utils.getAllPossibleMoves(currentState, side);
 	        
 	        /* base cases: 
-	         * if no more possible board states 
-	         * or we have exceeded max depth limit
+	         * 	if no more possible board states, 
+	         * 	or we have exceeded max depth limit
 	         */
 	        if (possibleMoves.isEmpty() || depth >= currDepthLimit) {
 			/* Negate the score if not RED */
@@ -111,88 +111,13 @@ public class AlphaBetaPlayer extends CheckersPlayer implements GradedCheckersPla
 			    return sbe.evaluate(currentState);
 			}
 	        }
-	        
-	        
+	       	
     		if (maxPlayer) { //if it is maxPlayer's turn
-    			
-			for (int i = 0; i < possibleMoves.size(); i++) {
-				Move move = possibleMoves.get(i); //set move
-		        	Stack<Integer> rv = Utils.execute(currentState, move); //set stack
-		        
-		        	//recursive call to traverse subtrees
-				alpha = Math.max(alpha, searchGameTree(currentState, depth + 1, alpha, beta, false));
-	
-				if (((alpha > bestScore) || setMove) && depth == 0) {
-					//only update best score if alpha was better
-					if(alpha > bestScore) { 
-						bestScore = alpha; 
-					} 
-					setMove = false; //allow ability to setMove
-					bestMove = possibleMoves.get(i); //set best move;
-				}
-			
-				/* Negate the score if not RED */
-				if (side == BLK) {
-					alpha = -alpha;
-				}
-			
-				//if able to prune
-				if (beta <= alpha) {
-					//set last pruned node score
-					if (side == BLK) {
-						lastPrunedNodeScore = -sbe.evaluate(currentState);
-					} else {
-						lastPrunedNodeScore = sbe.evaluate(currentState);
-					}
-		        		pruneCount++;
-		        		//revert board state on stack
-		        		Utils.revert(currentState, rv); 
-		            		break; //beta cut off
-	        		} else { 
-	        			//revert state on stack
-	        			Utils.revert(currentState, rv); 
-	        		}
-			}
-			return alpha;
-	
+			executeAlpha(possibleMoves, int[] currentState, int depth, 
+				int alpha, int beta, boolean maxPlayer);
     		} else { //else, it is minPlayer's turn 
-			
-			for (Move move : possibleMoves) {
-				Stack<Integer> rv = Utils.execute(currentState, move);	//set stack
-
-				//recursive call to traverse subtrees
-	        		beta = Math.min(beta, searchGameTree(currentState, depth + 1, alpha, beta, true));
-	        
-	        		//if we have encountered a better move
-	        		if( (beta > bestScore) && depth == 1 ) { 
-	        			bestScore = beta;	//update best score
-					setMove = true;		//set ability to use setMove function to true
-				}
-					
-			        /* Negate the score if not RED */
-			        if (side == BLK) {
-			        	beta = -beta;
-			        }
-			        
-	        		//if able to prune subtrees
-	        		if (beta <= alpha) {
-	        			//set last pruned node score
-					if (side == BLK) {
-						lastPrunedNodeScore = -sbe.evaluate(currentState);
-					} else {
-						lastPrunedNodeScore = sbe.evaluate(currentState);
-					}
-	        			pruneCount++;
-	        			//revert state on stack
-	        			Utils.revert(currentState, rv);
-	            			break; //alpha cut off
-	        		} else { 
-	        			//revert state on stack
-	        			Utils.revert(currentState, rv);
-	        		}
-			}
-			return beta;
-		
+			executeBeta(possibleMoves, int[] currentState, int depth, 
+				int alpha, int beta, boolean maxPlayer);
     		}
 		
 	}
@@ -210,6 +135,92 @@ public class AlphaBetaPlayer extends CheckersPlayer implements GradedCheckersPla
      	*/
 	public int getLastPrunedNodeScore() {
 		return lastPrunedNodeScore;
+	}
+	
+	/* executes recursive play for the alpha player */
+	private int executeAlpha(List<Move> possibleMoves, int[] currentState, int depth, 
+		int alpha, int beta, boolean maxPlayer) {
+		
+		for (int i = 0; i < possibleMoves.size(); i++) {
+			Move move = possibleMoves.get(i); //set move
+	        	Stack<Integer> rv = Utils.execute(currentState, move); //set stack
+	        
+	        	//recursive call to traverse subtrees
+			alpha = Math.max(alpha, searchGameTree(currentState, depth + 1, alpha, beta, false));
+
+			if (((alpha > bestScore) || setMove) && depth == 0) {
+				//only update best score if alpha was better
+				if(alpha > bestScore) { 
+					bestScore = alpha; 
+				} 
+				setMove = false; //allow ability to setMove
+				bestMove = possibleMoves.get(i); //set best move;
+			}
+		
+			/* Negate the score if not RED */
+			if (side == BLK) {
+				alpha = -alpha;
+			}
+		
+			//if able to prune
+			if (beta <= alpha) {
+				//set last pruned node score
+				if (side == BLK) {
+					lastPrunedNodeScore = -sbe.evaluate(currentState);
+				} else {
+					lastPrunedNodeScore = sbe.evaluate(currentState);
+				}
+	        		pruneCount++;
+	        		//revert board state on stack
+	        		Utils.revert(currentState, rv); 
+	            		break; //beta cut off
+        		} else { 
+        			//revert state on stack
+        			Utils.revert(currentState, rv); 
+        		}
+		}
+		return alpha;
+	}
+	
+	/* executes recursive play for the beta player */
+	private int executeBeta(List<Move> possibleMoves, int[] currentState, int depth, 
+		int alpha, int beta, boolean maxPlayer) {
+		
+		for (Move move : possibleMoves) {
+			Stack<Integer> rv = Utils.execute(currentState, move);	//set stack
+
+			//recursive call to traverse subtrees
+        		beta = Math.min(beta, searchGameTree(currentState, depth + 1, alpha, beta, true));
+        
+        		//if we have encountered a better move
+        		if( (beta > bestScore) && depth == 1 ) { 
+        			bestScore = beta;	//update best score
+				setMove = true;		//set ability to use setMove function to true
+			}
+				
+		        /* Negate the score if not RED */
+		        if (side == BLK) {
+		        	beta = -beta;
+		        }
+		        
+        		//if able to prune subtrees
+        		if (beta <= alpha) {
+        			//set last pruned node score
+				if (side == BLK) {
+					lastPrunedNodeScore = -sbe.evaluate(currentState);
+				} else {
+					lastPrunedNodeScore = sbe.evaluate(currentState);
+				}
+        			pruneCount++;
+        			//revert state on stack
+        			Utils.revert(currentState, rv);
+            			break; //alpha cut off
+        		} else { 
+        			//revert state on stack
+        			Utils.revert(currentState, rv);
+        		}
+		}
+		return beta;
 	}
      
 }
