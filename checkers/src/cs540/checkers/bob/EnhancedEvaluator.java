@@ -42,6 +42,13 @@ public class EnhancedEvaluator implements Evaluator {
 			+ evaluateSidePositioning();
 	}
 	
+	/* evaluates board material; 
+	 * 	each pawn remaining on the board contributes one point,
+ 	 * 	each remaining king remaining on the board contributes two points.
+ 	 * if nearing end-game and/or one side is losing badly, modify heuristic
+ 	 * to emphasize corner placement.
+ 	 * @return material score
+ 	 */
 	private int evaluateMaterials() {
 		/* Evaluate materials BEGIN */
 		int materialScore = 0;
@@ -93,7 +100,10 @@ public class EnhancedEvaluator implements Evaluator {
 	        /* Evaluate materials END */ 
 	}
 	
-	private int evaluateGuard(int[] bs) {
+	/* evaluates the board for checkers guarding the back row. 
+	 * @return guard score
+	 */
+	private int evaluateGuard() {
 	        /* Evaluate back-row guarding BEGIN */
 	        int guardScore = 0;
 	        
@@ -111,7 +121,11 @@ public class EnhancedEvaluator implements Evaluator {
 	        /* Evaluate back-row guarding END */
 	}
 	 
-	private int evaluateSidePositioning(int[] bs) {       
+	/* emphasizes moving pieces to the outer squares,
+	 * and forming diagonals by awarding more points.
+	 * @return side/diagonal positioning score
+	 */
+	private int evaluateSidePositioning() {       
 	        /* Evaulate side position holding BEGIN */
 	        int sideScore = 0;
 	        
